@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SymbioticFlow — Multi-Robot Cargo Handling for Railway Hubs</title>
+    <style>
+        :root {
+            --teal: #0d9488;
+            --teal-light: #ccfbf1;
+            --amber: #d97706;
+            --amber-light: #fef3c7;
+            --violet: #7c3aed;
+            --violet-light: #ede9fe;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-900: #111827;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            color: var(--gray-700);
+            line-height: 1.6;
+            background: #fff;
+        }
+
+        /* NAV */
+        nav {
+            position: fixed; top: 0; width: 100%; z-index: 100;
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--gray-200);
+            padding: 0.75rem 2rem;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        nav .logo { font-weight: 700; font-size: 1.1rem; color: var(--gray-900); }
+        nav .logo span { color: var(--teal); }
+        nav .nav-links { display: flex; gap: 1.5rem; }
+        nav .nav-links a {
+            text-decoration: none; color: var(--gray-600); font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+        nav .nav-links a:hover { color: var(--teal); }
+
+        /* HERO */
+        .hero {
+            min-height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            text-align: center;
+            padding: 6rem 2rem 4rem;
+            background: linear-gradient(165deg, var(--teal-light) 0%, #fff 40%, var(--amber-light) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute; top: -50%; right: -30%;
+            width: 80%; height: 200%;
+            background: radial-gradient(ellipse, rgba(13,148,136,0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero-content { max-width: 800px; position: relative; z-index: 1; }
+        .hero .badge {
+            display: inline-block;
+            background: var(--violet-light); color: var(--violet);
+            font-size: 0.8rem; font-weight: 600;
+            padding: 0.35rem 1rem; border-radius: 100px;
+            margin-bottom: 1.5rem;
+        }
+        .hero h1 {
+            font-size: clamp(2.2rem, 5vw, 3.5rem);
+            font-weight: 800; color: var(--gray-900);
+            line-height: 1.15; margin-bottom: 1.25rem;
+        }
+        .hero h1 span { color: var(--teal); }
+        .hero .subtitle {
+            font-size: 1.2rem; color: var(--gray-600);
+            max-width: 600px; margin: 0 auto 2rem;
+        }
+        .hero .partners {
+            display: flex; gap: 2rem; justify-content: center; align-items: center;
+            flex-wrap: wrap; margin-top: 2.5rem;
+            font-size: 0.85rem; color: var(--gray-600);
+        }
+        .hero .partners .partner-item {
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        .hero .partners .dot {
+            width: 8px; height: 8px; border-radius: 50%;
+        }
+
+        /* SECTIONS */
+        section { padding: 5rem 2rem; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .section-label {
+            font-size: 0.8rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.1em; color: var(--teal); margin-bottom: 0.75rem;
+        }
+        .section-title {
+            font-size: clamp(1.6rem, 3vw, 2.2rem);
+            font-weight: 700; color: var(--gray-900); margin-bottom: 1rem;
+        }
+        .section-desc {
+            font-size: 1.05rem; color: var(--gray-600);
+            max-width: 700px; margin-bottom: 2.5rem;
+        }
+
+        /* PROBLEM */
+        .problem { background: var(--gray-50); }
+        .problem-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+        .problem-card {
+            background: #fff; border: 1px solid var(--gray-200);
+            border-radius: 12px; padding: 1.5rem;
+        }
+        .problem-card .icon {
+            width: 40px; height: 40px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; margin-bottom: 1rem;
+        }
+        .problem-card h3 { font-size: 1rem; font-weight: 600; color: var(--gray-900); margin-bottom: 0.5rem; }
+        .problem-card p { font-size: 0.9rem; color: var(--gray-600); }
+
+        /* SOLUTION */
+        .solution-grid {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 1.5rem; margin-bottom: 2rem;
+        }
+        @media (max-width: 700px) { .solution-grid { grid-template-columns: 1fr; } }
+
+        .robot-card {
+            border-radius: 16px; padding: 2rem;
+            border: 2px solid transparent;
+            position: relative; overflow: hidden;
+        }
+        .robot-card.humanoid {
+            background: linear-gradient(135deg, var(--teal-light), #fff);
+            border-color: rgba(13,148,136,0.2);
+        }
+        .robot-card.quadruped {
+            background: linear-gradient(135deg, var(--amber-light), #fff);
+            border-color: rgba(217,119,6,0.2);
+        }
+        .robot-card .role-badge {
+            display: inline-block; font-size: 0.75rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.08em;
+            padding: 0.25rem 0.75rem; border-radius: 100px;
+            margin-bottom: 1rem;
+        }
+        .robot-card.humanoid .role-badge { background: rgba(13,148,136,0.15); color: var(--teal); }
+        .robot-card.quadruped .role-badge { background: rgba(217,119,6,0.15); color: var(--amber); }
+        .robot-card h3 { font-size: 1.2rem; font-weight: 700; color: var(--gray-900); margin-bottom: 0.5rem; }
+        .robot-card .model { font-size: 0.85rem; color: var(--gray-600); margin-bottom: 1rem; }
+        .robot-card ul { list-style: none; }
+        .robot-card ul li {
+            font-size: 0.9rem; color: var(--gray-600);
+            padding: 0.3rem 0; padding-left: 1.2rem; position: relative;
+        }
+        .robot-card ul li::before {
+            content: ''; position: absolute; left: 0; top: 0.65rem;
+            width: 6px; height: 6px; border-radius: 50%;
+        }
+        .robot-card.humanoid ul li::before { background: var(--teal); }
+        .robot-card.quadruped ul li::before { background: var(--amber); }
+
+        /* OS LAYER */
+        .os-bar {
+            background: linear-gradient(135deg, var(--violet-light), #fff);
+            border: 2px solid rgba(124,58,237,0.15);
+            border-radius: 16px; padding: 2rem;
+            display: grid; grid-template-columns: auto 1fr;
+            gap: 1.5rem; align-items: center;
+        }
+        @media (max-width: 600px) { .os-bar { grid-template-columns: 1fr; } }
+        .os-bar .os-icon {
+            width: 56px; height: 56px; border-radius: 14px;
+            background: rgba(124,58,237,0.1);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem;
+        }
+        .os-bar h3 { font-size: 1.1rem; font-weight: 700; color: var(--gray-900); margin-bottom: 0.3rem; }
+        .os-bar p { font-size: 0.9rem; color: var(--gray-600); }
+
+        /* WORKFLOW */
+        .workflow { background: var(--gray-50); }
+        .steps {
+            display: flex; gap: 0; justify-content: center; flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+        .step {
+            flex: 1; min-width: 160px; max-width: 220px;
+            text-align: center; padding: 1.5rem 1rem;
+            position: relative;
+        }
+        .step::after {
+            content: ''; position: absolute;
+            right: -2px; top: 50%; transform: translateY(-50%);
+            width: 0; height: 0;
+            border-top: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+            border-left: 8px solid var(--gray-200);
+        }
+        .step:last-child::after { display: none; }
+        @media (max-width: 700px) {
+            .step::after { display: none; }
+        }
+        .step .step-num {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: var(--teal); color: #fff;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 0.9rem; margin-bottom: 0.75rem;
+        }
+        .step h4 { font-size: 0.95rem; font-weight: 600; color: var(--gray-900); margin-bottom: 0.4rem; }
+        .step p { font-size: 0.8rem; color: var(--gray-600); }
+
+        /* IMPACT */
+        .impact-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem; margin-top: 2rem;
+        }
+        .impact-item { text-align: center; padding: 1.5rem; }
+        .impact-item .impact-icon {
+            font-size: 2rem; margin-bottom: 0.75rem;
+        }
+        .impact-item h4 { font-size: 1rem; font-weight: 600; color: var(--gray-900); margin-bottom: 0.4rem; }
+        .impact-item p { font-size: 0.85rem; color: var(--gray-600); }
+
+        /* TEAM */
+        .team { background: var(--gray-50); }
+        .team-grid {
+            display: flex; gap: 1.5rem; flex-wrap: wrap; justify-content: center;
+        }
+        .team-member {
+            text-align: center; width: 180px;
+        }
+        .team-member .avatar {
+            width: 64px; height: 64px; border-radius: 50%;
+            background: var(--gray-200);
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 1.4rem; font-weight: 700; color: var(--gray-600);
+            margin-bottom: 0.75rem;
+        }
+        .team-member h4 { font-size: 0.95rem; font-weight: 600; color: var(--gray-900); }
+        .team-member .role { font-size: 0.8rem; color: var(--gray-600); }
+        .team-member .org { font-size: 0.75rem; color: var(--teal); font-weight: 600; }
+
+        /* CTA */
+        .cta {
+            text-align: center; padding: 5rem 2rem;
+            background: linear-gradient(165deg, var(--gray-900) 0%, #1e293b 100%);
+            color: #fff;
+        }
+        .cta h2 { font-size: 2rem; font-weight: 700; margin-bottom: 1rem; }
+        .cta p { font-size: 1.05rem; opacity: 0.8; max-width: 500px; margin: 0 auto 2rem; }
+        .cta a {
+            display: inline-block;
+            background: var(--teal); color: #fff;
+            padding: 0.75rem 2rem; border-radius: 8px;
+            text-decoration: none; font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .cta a:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(13,148,136,0.4);
+        }
+
+        /* FOOTER */
+        footer {
+            text-align: center; padding: 2rem;
+            font-size: 0.8rem; color: var(--gray-600);
+            border-top: 1px solid var(--gray-200);
+        }
+        footer a { color: var(--teal); text-decoration: none; }
+
+        /* ANIMATIONS */
+        .fade-in {
+            opacity: 0; transform: translateY(24px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-in.visible { opacity: 1; transform: translateY(0); }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="logo">Symbiotic<span>Flow</span></div>
+    <div class="nav-links">
+        <a href="#problem">Challenge</a>
+        <a href="#solution">Solution</a>
+        <a href="#workflow">How It Works</a>
+        <a href="#impact">Impact</a>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="hero-content">
+        <div class="badge">Innovation Booster New Mobility Lab &mdash; Call #6</div>
+        <h1>Multi-Robot Cargo Handling<br>for <span>Railway Hubs</span></h1>
+        <p class="subtitle">
+            Specialized robots with agentic AI, automating the flow from rail wagon to sorting belt &mdash; no infrastructure changes required.
+        </p>
+        <div class="partners">
+            <div class="partner-item">
+                <div class="dot" style="background:var(--teal)"></div>
+                <span><strong>Binabik AI</strong> &mdash; Agentic Robotics</span>
+            </div>
+            <div class="partner-item">
+                <div class="dot" style="background:var(--amber)"></div>
+                <span><strong>ZHAW</strong> &mdash; School of Engineering</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="problem" id="problem">
+    <div class="container">
+        <div class="section-label fade-in">The Challenge</div>
+        <h2 class="section-title fade-in">Railway hub logistics are stuck in the manual era</h2>
+        <p class="section-desc fade-in">
+            Every night, tens of thousands of parcels flow through railway hubs under extreme time pressure. The entire process &mdash; pulling trolleys from wagons, unloading parcels onto sorting belts &mdash; is done by hand.
+        </p>
+        <div class="problem-grid">
+            <div class="problem-card fade-in">
+                <div class="icon" style="background:var(--amber-light)">&#9201;</div>
+                <h3>Extreme Time Pressure</h3>
+                <p>Operations run between 3:00 and 7:30 AM. Every minute counts to get parcels sorted and loaded for morning delivery.</p>
+            </div>
+            <div class="problem-card fade-in">
+                <div class="icon" style="background:var(--teal-light)">&#9881;</div>
+                <h3>Unstructured Environments</h3>
+                <p>Railway hubs have rails, uneven floors, grates, and tight spaces. No two hubs look the same. Standard automation cannot cope.</p>
+            </div>
+            <div class="problem-card fade-in">
+                <div class="icon" style="background:var(--violet-light)">&#128230;</div>
+                <h3>Heterogeneous Cargo</h3>
+                <p>Parcels vary wildly in size, weight, shape, and fragility. No standardized loading patterns exist.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="solution" id="solution">
+    <div class="container">
+        <div class="section-label fade-in">Our Approach</div>
+        <h2 class="section-title fade-in">The right robot for the right task</h2>
+        <p class="section-desc fade-in">
+            Instead of one robot trying to do everything, we pair two specialized platforms &mdash; each excelling where the other can't &mdash; coordinated by an intelligent AI layer.
+        </p>
+
+        <div class="solution-grid">
+            <div class="robot-card humanoid fade-in">
+                <div class="role-badge">Dexterous Node</div>
+                <h3>Wheeled Humanoid</h3>
+                <div class="model">Galaxea R1 Pro &mdash; Binabik AI</div>
+                <ul>
+                    <li>AI vision identifies parcel type, size, and orientation</li>
+                    <li>Dual arms with 26 degrees of freedom</li>
+                    <li>Picks heterogeneous parcels from trolleys onto belt</li>
+                    <li>Adapts to novel objects without retraining</li>
+                </ul>
+            </div>
+            <div class="robot-card quadruped fade-in">
+                <div class="role-badge">All-Terrain Tugger</div>
+                <h3>Wheeled-Legged Quadruped</h3>
+                <div class="model">LYNX M20 Pro &mdash; DEEPRobotics</div>
+                <ul>
+                    <li>Tows trolleys between wagons and sorting stations</li>
+                    <li>Hybrid locomotion: wheels for speed, legs for obstacles</li>
+                    <li>Navigates rails, gaps, and uneven terrain</li>
+                    <li>All-weather operation (IP66)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="os-bar fade-in">
+            <div class="os-icon">&#129504;</div>
+            <div>
+                <h3>Binabik Agentic OS</h3>
+                <p>Vision-language models reason about tasks in real time. The AI layer decomposes high-level goals, dispatches specialized skills to each robot, and adapts to unexpected situations &mdash; enabling a modular system that extends to new tasks across the logistics chain.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="workflow" id="workflow">
+    <div class="container">
+        <div class="section-label fade-in">Concept of Operations</div>
+        <h2 class="section-title fade-in">A continuous, synchronized loop</h2>
+        <div class="steps">
+            <div class="step fade-in">
+                <div class="step-num">1</div>
+                <h4>Retrieve</h4>
+                <p>Quadruped navigates to wagon, engages hitch, secures trolley</p>
+            </div>
+            <div class="step fade-in">
+                <div class="step-num">2</div>
+                <h4>Transport</h4>
+                <p>Tows trolley across hub terrain to the sorting station</p>
+            </div>
+            <div class="step fade-in">
+                <div class="step-num">3</div>
+                <h4>Unload</h4>
+                <p>Humanoid uses AI vision and dual arms to pick parcels onto belt</p>
+            </div>
+            <div class="step fade-in">
+                <div class="step-num">4</div>
+                <h4>Return</h4>
+                <p>Quadruped swaps empty trolley for a full one &mdash; cycle repeats</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="impact">
+    <div class="container">
+        <div class="section-label fade-in">Why It Matters</div>
+        <h2 class="section-title fade-in">Scalable, sustainable, human-centered</h2>
+        <div class="impact-grid">
+            <div class="impact-item fade-in">
+                <div class="impact-icon" style="font-size:1.2rem; font-weight:700; color:var(--teal);">CO&#8322;</div>
+                <h4>Rail Modal Shift</h4>
+                <p>Removing hub bottlenecks enables more freight on rail &mdash; 7x less CO&#8322; than road transport</p>
+            </div>
+            <div class="impact-item fade-in">
+                <div class="impact-icon" style="font-size:1.2rem; font-weight:700; color:var(--amber);">24/7</div>
+                <h4>Worker Well-being</h4>
+                <p>Automates physically demanding 3 AM night shifts, reducing injuries and improving working conditions</p>
+            </div>
+            <div class="impact-item fade-in">
+                <div class="impact-icon" style="font-size:1.2rem; font-weight:700; color:var(--violet);">N&times;</div>
+                <h4>Extreme Scalability</h4>
+                <p>Same robotic cell replicates across every hub, every operator. Software scales across hardware platforms</p>
+            </div>
+            <div class="impact-item fade-in">
+                <div class="impact-icon" style="font-size:1.2rem; font-weight:700; color:var(--gray-600);">+</div>
+                <h4>Modular by Design</h4>
+                <p>Agentic architecture extends to other logistics tasks &mdash; sorting, loading, inspection &mdash; without redesign</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="cta">
+    <h2>Ready to automate railway logistics</h2>
+    <p>A Proof of Concept validating the future of intelligent, adaptive cargo handling.</p>
+    <a href="https://binabik.ai" target="_blank">Learn more about Binabik AI &rarr;</a>
+</section>
+
+<footer>
+    <p>SymbioticFlow &mdash; Binabik AI &times; ZHAW &mdash; Innovation Booster New Mobility Lab, Call #6</p>
+    <p style="margin-top:0.5rem"><a href="https://binabik.ai">binabik.ai</a></p>
+</footer>
+
+<script>
+    // Intersection Observer for fade-in animations
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry, i) => {
+            if (entry.isIntersecting) {
+                // Stagger siblings
+                const siblings = entry.target.parentElement.querySelectorAll('.fade-in');
+                const index = Array.from(siblings).indexOf(entry.target);
+                setTimeout(() => {
+                    entry.target.classList.add('visible');
+                }, index * 100);
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.15 });
+
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+    // Smooth scroll for nav links
+    document.querySelectorAll('nav a[href^="#"]').forEach(a => {
+        a.addEventListener('click', e => {
+            e.preventDefault();
+            const target = document.querySelector(a.getAttribute('href'));
+            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    });
+</script>
+
+</body>
+</html>
